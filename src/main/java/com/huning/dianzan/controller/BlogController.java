@@ -2,6 +2,7 @@ package com.huning.dianzan.controller;
 
 import com.huning.dianzan.common.BaseResponse;
 import com.huning.dianzan.common.ResultUtils;
+import com.huning.dianzan.model.entity.Blog;
 import com.huning.dianzan.model.vo.BlogVO;
 import com.huning.dianzan.service.BlogService;
 import jakarta.annotation.Resource;
@@ -9,6 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
 @RestController
 @RequestMapping("blog")
 public class BlogController {
@@ -20,4 +24,12 @@ public class BlogController {
         BlogVO blogVO = blogService.getBlogVOById(blogId, request);
         return ResultUtils.success(blogVO);
     }
+
+    @GetMapping("/list")
+    public BaseResponse<List<BlogVO>> list(HttpServletRequest request) {
+        List<Blog> blogList = blogService.list();
+        List<BlogVO> blogVOList = blogService.getBlogVOList(blogList, request);
+        return ResultUtils.success(blogVOList);
+    }
+
 }

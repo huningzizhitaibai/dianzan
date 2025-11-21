@@ -70,9 +70,9 @@ public class Thumb {
         sb.append(" [");
         sb.append("Hash = ").append(hashCode());
         sb.append(", id=").append(id);
-        sb.append(", userid=").append(userId);
-        sb.append(", blogid=").append(blogId);
-        sb.append(", createtime=").append(createTime);
+        sb.append(", userId=").append(userId);
+        sb.append(", blogId=").append(blogId);
+        sb.append(", createTime=").append(createTime);
         sb.append("]");
         return sb.toString();
     }
