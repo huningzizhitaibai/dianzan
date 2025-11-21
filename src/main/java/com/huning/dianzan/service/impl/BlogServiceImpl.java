@@ -15,7 +15,9 @@ import com.huning.dianzan.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -39,6 +41,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
     @Resource
     @Lazy
     private ThumbService thumbService;
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 根据blogId 获取相关博客, 同时在返回时, 进行信息脱敏
@@ -78,14 +82,17 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog>
         User loginUser = userService.getLoginUser(request);
         Map<Long, Boolean> blogIdHasThumbMap = new HashMap<>();
         if (ObjUtil.isNotEmpty(loginUser)) {
-            Set<Long> blogIdSet = blogList.stream().map(Blog::getId).collect(Collectors.toSet());
+            //收集所有的查询到的blogId
+            List<Object> blogIdList = blogList.stream().map(blog -> blog.getId().toString()).collect(Collectors.toList());
             // 获取点赞
-            List<Thumb> thumbList = thumbService.lambdaQuery()
-                    .eq(Thumb::getUserId, loginUser.getId())
-                    .in(Thumb::getBlogId, blogIdSet)
-                    .list();
-
-            thumbList.forEach(blogThumb -> blogIdHasThumbMap.put(blogThumb.getBlogId(), true));
+            //从redis中获取用户对应所有的blogId的记录(当然, 没有点赞的记录是查不到的, 最终表中应该都是对应的bool)
+            List<Object> thumbList = redisTemplate.opsForHash().multiGet(ThumbConstant.USER_THUMB_KEY_PREFIX + loginUser.getId().toString(), blogIdList);
+            for (int i =0 ;i<thumbList.size(); i++) {
+                if (thumbList.get(i) == null)  {
+                    continue;
+                }
+                blogIdHasThumbMap.put(Long.valueOf(blogIdList.get(i).toString()), true);
+            }
         }
 
         return blogList.stream()
